@@ -2,7 +2,9 @@ import { getPrisma } from '@/lib/prisma'
 import { ExpenseFormValues, GroupFormValues } from '@/lib/schemas'
 import { Expense, RecurringTransactions } from '@prisma/client'
 import { nanoid } from 'nanoid'
+import { getEpochTimeInSeconds } from "./utils";
 
+const secondsInADay = 86400
 function sleep(duration: number) {
   return new Promise((resolve: any) => {
     setTimeout(resolve, duration)
@@ -128,8 +130,8 @@ export async function createOrUpdateRecurringTransaction(
   const receivedLockId = (await acquireLockRecurringTransaction(groupId, expenseRef || expenseId, lockId))?.[0]?.lockId
   let recTxn;
   if (!receivedLockId) return recTxn
-  const epochTime = Math.floor((new Date(expenseDate)).getTime() / 1000)
-  const nextAt: number = epochTime + (+expenseFormValues.recurringDays * 86400)
+  const epochTime = getEpochTimeInSeconds(expenseDate)
+  const nextAt: number = epochTime + (+expenseFormValues.recurringDays * secondsInADay)
   if (!isNaN(nextAt)) {
     if (expenseRef) {
       expenseDate = new Date(nextAt*1000)
@@ -411,7 +413,7 @@ export async function getCategories() {
 }
 
 export async function getGroupExpenses(groupId: string) {
-  const now: number = Math.floor((new Date()).getTime() / 1000)
+  const now: number = getEpochTimeInSeconds(null)
   const prisma = await getPrisma()
 
   let allPendingRecurringTxns = await prisma.recurringTransactions.findMany({
@@ -440,7 +442,7 @@ export async function getGroupExpenses(groupId: string) {
       },
     })
     for (let i=0; i<relatedExpenses.length; ++i) {
-      if (now < new Date(relatedExpenses[i].expenseDate).getTime()/1000 + (+relatedExpenses[i].recurringDays * 86400)) {
+      if (now < getEpochTimeInSeconds(relatedExpenses[i].expenseDate) + (+relatedExpenses[i].recurringDays * secondsInADay)) {
         ignoreExpenseId.push(relatedExpenses[i].id)
         continue
       }
