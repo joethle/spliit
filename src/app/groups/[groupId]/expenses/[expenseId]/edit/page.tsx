@@ -36,9 +36,10 @@ export default async function EditExpensePage({
 
   async function deleteExpenseAction() {
     'use server'
-    await deleteExpense(expenseId)
+    await deleteExpense(groupId, expenseId)
     redirect(`/groups/${groupId}`)
   }
+
 
   return (
     <Suspense>
