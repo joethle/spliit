@@ -1,4 +1,5 @@
 import { cached } from '@/app/cached-functions'
+import { ActiveUserReimbursementList } from '@/app/groups/[groupId]/expenses/active-user-balance'
 import { ActiveUserModal } from '@/app/groups/[groupId]/expenses/active-user-modal'
 import { CreateFromReceiptButton } from '@/app/groups/[groupId]/expenses/create-from-receipt-button'
 import { ExpenseList } from '@/app/groups/[groupId]/expenses/expense-list'
@@ -16,6 +17,7 @@ import {
   getGroupExpenseCount,
   getGroupExpenses,
 } from '@/lib/api'
+import { getBalances, getSuggestedReimbursements } from '@/lib/balances'
 import { env } from '@/lib/env'
 import { Download, Plus } from 'lucide-react'
 import { Metadata } from 'next'
@@ -39,6 +41,10 @@ export default async function GroupExpensesPage({
 
   const categories = await getCategories()
 
+  const expenses = await getGroupExpenses(group.id)
+  const balances = getBalances(expenses)
+  const reimbursements = getSuggestedReimbursements(balances)
+
   return (
     <>
       <Card className="mb-4 rounded-none -mx-4 border-x-0 sm:border-x sm:rounded-lg sm:mx-0">
@@ -48,6 +54,12 @@ export default async function GroupExpensesPage({
             <CardDescription>
               Here are the expenses that you created for your group.
             </CardDescription>
+            <ActiveUserReimbursementList
+              reimbursements={reimbursements}
+              groupId={groupId}
+              participants={group.participants}
+              currency={group.currency}
+            />
           </CardHeader>
           <CardHeader className="p-4 sm:p-6 flex flex-row space-y-0 gap-2">
             <Button variant="secondary" size="icon" asChild>
